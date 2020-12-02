@@ -1,0 +1,11 @@
+version: '3.1'
+services:
+  dev-postgres:
+    image: postgres
+    environment:
+      POSTGRES_USER: aozerov
+      POSTGRES_PASSWORD: '0112'
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./db/data:/var/lib/postgresql/data
