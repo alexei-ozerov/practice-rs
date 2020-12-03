@@ -11,6 +11,7 @@ use futures::future::Future;
 
 struct Microservice;
 
+// Create Service Impl for Microservice Struct
 impl Service for Microservice {
     type Request = Request;
     type Response = Response;
@@ -23,6 +24,7 @@ impl Service for Microservice {
     }
 }
 
+// Initialize Logging, Instantiate Service, Begin Listening
 fn main() {
     env_logger::init();
     let address = "127.0.0.1:8080"
