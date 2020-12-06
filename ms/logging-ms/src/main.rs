@@ -1,13 +1,12 @@
-extern crate hyper;
 extern crate futures;
+extern crate hyper;
 
 #[macro_use]
 extern crate log;
 extern crate env_logger;
 
-use hyper::server::{Request, Response, Service};
-
 use futures::future::Future;
+use hyper::server::{Request, Response, Service};
 
 struct Microservice;
 
@@ -19,7 +18,7 @@ impl Service for Microservice {
     type Future = Box<dyn Future<Item = Self::Response, Error = Self::Error>>;
 
     fn call(&self, request: Request) -> Self::Future {
-        info!("Microservice received a request: {:?}", request);
+        info!("Received a request: {:?}", request);
         Box::new(futures::future::ok(Response::new()))
     }
 }
@@ -27,13 +26,11 @@ impl Service for Microservice {
 // Initialize Logging, Instantiate Service, Begin Listening
 fn main() {
     env_logger::init();
-    let address = "127.0.0.1:8080"
-        .parse()
-        .unwrap();
+    let address = "127.0.0.1:8080".parse().unwrap();
     let server = hyper::server::Http::new()
         .bind(&address, move || Ok(Microservice))
         .unwrap();
-    
-    info!("Running microservice at {}", address);
+
+    info!("Running service at {}", address);
     server.run().unwrap();
 }
