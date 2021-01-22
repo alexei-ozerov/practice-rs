@@ -52,19 +52,19 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
 }
 
 fn show_journal() -> Vec<(String, String)> {
-    use ms::schema::posts::dsl::*;
+    use ms::schema::entries::dsl::*;
 
     let mut reponse_vec: Vec<(String, String)> = Vec::new();
     let connection = establish_connection();
-    let results = posts
+    let results = entries
         .limit(5)
-        .load::<Post>(&connection)
+        .load::<Entry>(&connection)
         .expect("Error loading posts");
 
-    info!("Retrieved {} posts", results.len());
+    info!("Retrieved {} entries", results.len());
 
-    for post in results {
-        reponse_vec.push((post.title, post.body));
+    for entry in results {
+        reponse_vec.push((entry.title, entry.body));
     }
 
     reponse_vec

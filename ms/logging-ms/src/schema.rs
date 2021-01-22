@@ -1,5 +1,5 @@
 table! {
-    posts (id) {
+    entries (id) {
         id -> Int4,
         title -> Varchar,
         body -> Text,
