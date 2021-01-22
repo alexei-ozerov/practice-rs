@@ -1,6 +1,8 @@
 extern crate ms;
 
 use diesel;
+use serde::Deserialize;
+use serde_json::{Map, Value, json, to_string_pretty, from_str};
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 
@@ -21,17 +23,28 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
             info!("Received GET Request: {:?}", req);
             let resp = show_journal();
 
-            info!("Retreived Data: {:?}", resp);
-            let latest_entry =
-                "Title: ".to_owned() + &resp[resp.len() - 1].0 + "\nBody: " + &resp[resp.len() - 1].1;
+            let mut map = Map::new();
+            for t in resp.into_iter() {
+                map.insert("Title_".to_owned() + &t.2.to_string(), Value::String(t.0));
+                map.insert("Body_".to_owned() + &t.2.to_string(), Value::String(t.1));
+            }
+            
+            let json_string = json!(map);
+            let resp_string = to_string_pretty(&json_string).unwrap();
 
-            *response.body_mut() = Body::from(latest_entry);
+            info!("Retreived Data: {:?}", resp_string);
+            *response.body_mut() = Body::from(resp_string)
         }
 
         // Write Data To DB
         (&Method::POST, "/write") => {
             info!("Received Request: {:?}", req);
-            write_journal(req).await?;
+            
+            // Convert Request To Bytes To JSON, with Error on Failure
+            let bytes = hyper::body::to_bytes(req.into_body()).await?;
+            let payload = String::from_utf8(bytes.to_vec()).unwrap();
+
+            write_journal(payload).await?;
             *response.body_mut() = Body::from("Written Data.");
         }
 
@@ -51,10 +64,10 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     Ok(response)
 }
 
-fn show_journal() -> Vec<(String, String)> {
+fn show_journal() -> Vec<(String, String, i32)> {
     use ms::schema::entries::dsl::*;
 
-    let mut reponse_vec: Vec<(String, String)> = Vec::new();
+    let mut reponse_vec: Vec<(String, String, i32)> = Vec::new();
     let connection = establish_connection();
     let results = entries
         .limit(5)
@@ -64,20 +77,24 @@ fn show_journal() -> Vec<(String, String)> {
     info!("Retrieved {} entries", results.len());
 
     for entry in results {
-        reponse_vec.push((entry.title, entry.body));
+        reponse_vec.push((entry.title, entry.body, entry.id));
     }
 
     reponse_vec
 }
 
-async fn write_journal(request: Request<Body>) -> Result<(), hyper::Error> {
+#[derive(Deserialize, Debug)]
+struct WritePayload {
+    title: String,
+    body: String,
+}
+
+async fn write_journal(payload: String) -> Result<(), hyper::Error> {
     let connection = establish_connection();
 
-    let full_body = hyper::body::to_bytes(request.into_body()).await?;
-    let string_bod = full_body.iter().cloned().collect::<Vec<u8>>();
-
-    let title = String::from("Test!");
-    let body = String::from_utf8_lossy(&string_bod).to_string();
+    let json_obj: WritePayload = from_str(&payload).unwrap();
+    let title = json_obj.title;
+    let body = json_obj.body;
 
     let post = create_post(&connection, &title, &body);
     info!("Saved record {} with id {}", title, post.id);
