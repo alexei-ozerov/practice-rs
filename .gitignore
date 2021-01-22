@@ -1,3 +1,3 @@
 /db/data
 /ms/logging-ms/target
-/ms/logging-ms/Cargo.lock
+.env

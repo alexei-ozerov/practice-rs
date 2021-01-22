@@ -1,36 +1,101 @@
-extern crate futures;
-extern crate hyper;
+extern crate ms;
 
-#[macro_use]
-extern crate log;
-extern crate env_logger;
+use diesel;
+use hyper::service::{make_service_fn, service_fn};
+use hyper::{Body, Method, Request, Response, Server, StatusCode};
 
-use futures::future::Future;
-use hyper::server::{Request, Response, Service};
+use env_logger;
+use log::{error, info};
 
-struct Microservice;
+use self::diesel::prelude::*;
+use self::models::*;
+use self::ms::*;
 
-// Create Service Impl for Microservice Struct
-impl Service for Microservice {
-    type Request = Request;
-    type Response = Response;
-    type Error = hyper::Error;
-    type Future = Box<dyn Future<Item = Self::Response, Error = Self::Error>>;
+async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    let mut response = Response::new(Body::empty());
 
-    fn call(&self, request: Request) -> Self::Future {
-        info!("Received a request: {:?}", request);
-        Box::new(futures::future::ok(Response::new()))
-    }
+    // Routing
+    match (req.method(), req.uri().path()) {
+        // Return Message From DB
+        (&Method::GET, "/") => {
+            info!("Received GET Request: {:?}", req);
+            let resp = show_journal();
+
+            info!("Retreived Data: {:?}", resp);
+            let latest_entry =
+                "Title: ".to_owned() + &resp[resp.len() - 1].0 + "\nBody: " + &resp[resp.len() - 1].1;
+
+            *response.body_mut() = Body::from(latest_entry);
+        }
+
+        // Write Data To DB
+        (&Method::POST, "/write") => {
+            info!("Received Request: {:?}", req);
+            write_journal(req).await?;
+            *response.body_mut() = Body::from("Written Data.");
+        }
+
+        // Return Echo Response
+        (&Method::POST, "/test") => {
+            info!("Received Request: {:?}", req);
+            *response.body_mut() = req.into_body();
+        }
+
+        // Return Error
+        _ => {
+            error!("Received INVALID Request: {:?}", req);
+            *response.status_mut() = StatusCode::NOT_FOUND;
+        }
+    };
+
+    Ok(response)
 }
 
-// Initialize Logging, Instantiate Service, Begin Listening
-fn main() {
-    env_logger::init();
-    let address = "127.0.0.1:8080".parse().unwrap();
-    let server = hyper::server::Http::new()
-        .bind(&address, move || Ok(Microservice))
-        .unwrap();
+fn show_journal() -> Vec<(String, String)> {
+    use ms::schema::posts::dsl::*;
 
-    info!("Running service at {}", address);
-    server.run().unwrap();
+    let mut reponse_vec: Vec<(String, String)> = Vec::new();
+    let connection = establish_connection();
+    let results = posts
+        .limit(5)
+        .load::<Post>(&connection)
+        .expect("Error loading posts");
+
+    info!("Retrieved {} posts", results.len());
+
+    for post in results {
+        reponse_vec.push((post.title, post.body));
+    }
+
+    reponse_vec
+}
+
+async fn write_journal(request: Request<Body>) -> Result<(), hyper::Error> {
+    let connection = establish_connection();
+
+    let full_body = hyper::body::to_bytes(request.into_body()).await?;
+    let string_bod = full_body.iter().cloned().collect::<Vec<u8>>();
+
+    let title = String::from("Test!");
+    let body = String::from_utf8_lossy(&string_bod).to_string();
+
+    let post = create_post(&connection, &title, &body);
+    info!("Saved record {} with id {}", title, post.id);
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    env_logger::init();
+
+    let addr = ([127, 0, 0, 1], 3000).into();
+    let svc = make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(router)) });
+    let server = Server::bind(&addr).serve(svc);
+
+    println!("\n\n######################################");
+    println!("Starting Server\nListening on http://{}", addr);
+    println!("######################################\n");
+    server.await?;
+
+    Ok(())
 }
