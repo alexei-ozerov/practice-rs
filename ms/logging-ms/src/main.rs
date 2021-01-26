@@ -1,10 +1,10 @@
 extern crate ms;
 
 use diesel;
-use serde::Deserialize;
-use serde_json::{Map, Value, json, to_string_pretty, from_str};
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
+use serde::Deserialize;
+use serde_json::{from_str, json, to_string_pretty, Map, Value};
 
 use env_logger;
 use log::{error, info};
@@ -12,6 +12,13 @@ use log::{error, info};
 use self::diesel::prelude::*;
 use self::models::*;
 use self::ms::*;
+
+// Deserialize POST Request Payload JSON
+#[derive(Deserialize, Debug)]
+struct WritePayload {
+    title: String,
+    body: String,
+}
 
 async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     let mut response = Response::new(Body::empty());
@@ -21,14 +28,14 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
         // Return Message From DB
         (&Method::GET, "/") => {
             info!("Received GET Request: {:?}", req);
-            let resp = show_journal();
+            let resp = show_journal().await?;
 
             let mut map = Map::new();
             for t in resp.into_iter() {
                 map.insert("Title_".to_owned() + &t.2.to_string(), Value::String(t.0));
                 map.insert("Body_".to_owned() + &t.2.to_string(), Value::String(t.1));
             }
-            
+
             let json_string = json!(map);
             let resp_string = to_string_pretty(&json_string).unwrap();
 
@@ -39,7 +46,7 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
         // Write Data To DB
         (&Method::POST, "/write") => {
             info!("Received Request: {:?}", req);
-            
+
             // Convert Request To Bytes To JSON, with Error on Failure
             let bytes = hyper::body::to_bytes(req.into_body()).await?;
             let payload = String::from_utf8(bytes.to_vec()).unwrap();
@@ -64,7 +71,8 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     Ok(response)
 }
 
-fn show_journal() -> Vec<(String, String, i32)> {
+// Retrieve Recent Practice Journal Entries
+async fn show_journal() -> Result<Vec<(String, String, i32)>, hyper::Error> {
     use ms::schema::entries::dsl::*;
 
     let mut reponse_vec: Vec<(String, String, i32)> = Vec::new();
@@ -80,15 +88,10 @@ fn show_journal() -> Vec<(String, String, i32)> {
         reponse_vec.push((entry.title, entry.body, entry.id));
     }
 
-    reponse_vec
+    Ok(reponse_vec)
 }
 
-#[derive(Deserialize, Debug)]
-struct WritePayload {
-    title: String,
-    body: String,
-}
-
+// Write Practice Journal Entry (via JSON payload)
 async fn write_journal(payload: String) -> Result<(), hyper::Error> {
     let connection = establish_connection();
 
