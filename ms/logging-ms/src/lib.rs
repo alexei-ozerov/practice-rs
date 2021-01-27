@@ -12,13 +12,14 @@ use self::models::{Entry, NewEntry};
 pub mod models;
 pub mod schema;
 
+// Return Connection
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();
-
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set!");
     PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
 }
 
+// Write Data To Database
 pub fn create_post<'a>(conn: &PgConnection, title: &'a str, body: &'a str) -> Entry {
     use schema::entries;
 

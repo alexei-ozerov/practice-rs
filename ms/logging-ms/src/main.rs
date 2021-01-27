@@ -1,13 +1,16 @@
 extern crate ms;
 
 use diesel;
+use env_logger;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
+use log::{error, info};
 use serde::Deserialize;
 use serde_json::{from_str, json, to_string_pretty, Map, Value};
 
-use env_logger;
-use log::{error, info};
+use chrono::offset::Utc;
+use chrono::DateTime;
+use std::time::SystemTime;
 
 use self::diesel::prelude::*;
 use self::models::*;
@@ -20,6 +23,15 @@ struct WritePayload {
     body: String,
 }
 
+/*
+            ###############
+            Practice RS API
+            ###############
+
+   /        => Get Most Recent Journal Entries
+   /write   => Add New Journal Entry
+   /test    =>
+*/
 async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     let mut response = Response::new(Body::empty());
 
@@ -56,9 +68,12 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
         }
 
         // Return Echo Response
-        (&Method::POST, "/test") => {
+        (&Method::GET, "/health") => {
             info!("Received Request: {:?}", req);
-            *response.body_mut() = req.into_body();
+            let system_time = SystemTime::now();
+            let datetime: DateTime<Utc> = system_time.into();
+            *response.body_mut() =
+                Body::from("The API is active | ".to_owned() + &datetime.to_string())
         }
 
         // Return Error
@@ -112,9 +127,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let svc = make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(router)) });
     let server = Server::bind(&addr).serve(svc);
 
-    println!("\n\n######################################");
+    println!("\n\n###################################");
     println!("Starting Server\nListening on http://{}", addr);
-    println!("######################################\n");
+    println!("###################################\n");
     server.await?;
 
     Ok(())

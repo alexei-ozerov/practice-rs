@@ -14,3 +14,4 @@ dotenv = "0.15.0"
 hyper = { version = "0.14", features = ["full"] }
 tokio = { version = "1", features = ["full"] }
 diesel = { version = "1.0.0", features = ["postgres"] }
+chrono = "*"
