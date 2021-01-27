@@ -32,8 +32,4 @@ if [[ -z ${DB}  ]]; then
     exit 1
 fi
 
-mkdir -p db/data
 echo DATABASE_URL=postgres://${USER}:${PASS}}@${ADDR}}:${PORT}/${DB} >> .env
-cd ms/logging-ms/
-diesel setup
-diesel migration run
