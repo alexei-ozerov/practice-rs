@@ -1,28 +1,40 @@
-# Define Build Layer
+#-------------------#
+# Cargo Build Stage #
+#-------------------#
 FROM rustlang/rust:nightly as builder
-WORKDIR /usr/src
+WORKDIR /usr/src/ms
 
-# 1a: Update + Deps
+# Build Deps, Cache & Clean Up
+COPY logging-ms/Cargo.toml Cargo.toml
+RUN mkdir src/ && echo "fn main() {println!(\"if you see this, the build broke\")}" > src/main.rs
+RUN cargo build --release
+RUN rm -f target/release/deps/ms*
+
+# Build Application
+COPY logging-ms/ .
+RUN cargo build --release
+RUN cargo install --path .
+
+#--------------------------#
+# Microservice Build Stage #
+#--------------------------#
+FROM debian:stretch-slim
+
+# Add Underprivileged User
+RUN addgroup -uid 1000 ms
+RUN useradd -s /bin/bash -g ms -G ms -u 1000 ms
+
+# Pre-Requisite For Install Postgres Client On Stretch-Slim
+RUN mkdir -p /usr/share/man/man1 /usr/share/man/man7
+# Install Dependencies For DIESEL
 RUN apt-get update && \
-    apt-get dist-upgrade -y && \
-    apt-get install -y musl-tools && \
-    rustup target add x86_64-unknown-linux-musl
+    apt-get upgrade -y && \
+    apt-get install postgresql postgresql-client -y
+COPY --from=builder /usr/local/cargo/bin/ms /usr/local/bin/ms
 
-# 1b: Download & Compile Rust Deps
-RUN USER=root cargo new --bin logging-ms
-WORKDIR /usr/src/logging-ms
-COPY logging-ms/Cargo.toml logging-ms/Cargo.lock ./
-RUN cargo install --target x86_64-unknown-linux-musl --path .
-
-# 1c: Build Binary
-COPY logging-ms/src ./src
-RUN cargo install --target x86_64-unknown-linux-musl --path .
-RUN ls -la
-RUN ls -la target/release
-RUN ls -la /usr/local/cargo/bin/
-
-# 2: Copy & Deploy Binary To New Image
-FROM scratch
-COPY --from=builder /usr/local/cargo/bin/ms .
-USER 1000
-CMD ["./logging-ms"]
+# Run MS with Logs Enabled As MS User
+WORKDIR /usr/local/bin/
+RUN chown ms:ms ms
+USER ms
+ENV RUST_LOG=DEBUG
+CMD ["ms"]

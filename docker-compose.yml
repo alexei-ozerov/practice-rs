@@ -1,4 +1,4 @@
-version: '3.1'
+version: "3.3"
 services:
   db:
     image: postgres
@@ -9,3 +9,11 @@ services:
       - "5433:5432"
     volumes:
       - ./db/data:/var/lib/postgresql/data
+  ms:
+    image: practice-rs:ms
+    environment:
+      DATABASE_URL: postgres://aozerov:0112@db:5432/echo_ms
+    ports:
+      - "3001:3000"
+    depends_on:
+      - db

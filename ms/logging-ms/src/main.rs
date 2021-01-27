@@ -23,19 +23,16 @@ struct WritePayload {
     body: String,
 }
 
-/*
-            ###############
+/*          ###############
             Practice RS API
+                ROUTES
             ###############
 
    /        => Get Most Recent Journal Entries
    /write   => Add New Journal Entry
-   /test    =>
-*/
+   /health  => Return Message & Machine Timestamp  */
 async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     let mut response = Response::new(Body::empty());
-
-    // Routing
     match (req.method(), req.uri().path()) {
         // Return Message From DB
         (&Method::GET, "/") => {
@@ -64,7 +61,7 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
             let payload = String::from_utf8(bytes.to_vec()).unwrap();
 
             write_journal(payload).await?;
-            *response.body_mut() = Body::from("Written Data.");
+            *response.body_mut() = Body::from("Written Data.")
         }
 
         // Return Echo Response
@@ -89,7 +86,7 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
 // Retrieve Recent Practice Journal Entries
 async fn show_journal() -> Result<Vec<(String, String, i32)>, hyper::Error> {
     use ms::schema::entries::dsl::*;
-
+    
     let mut reponse_vec: Vec<(String, String, i32)> = Vec::new();
     let connection = establish_connection();
     let results = entries
@@ -123,7 +120,7 @@ async fn write_journal(payload: String) -> Result<(), hyper::Error> {
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     env_logger::init();
 
-    let addr = ([127, 0, 0, 1], 3000).into();
+    let addr = ([0, 0, 0, 0], 3000).into();
     let svc = make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(router)) });
     let server = Server::bind(&addr).serve(svc);
 
