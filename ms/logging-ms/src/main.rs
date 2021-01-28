@@ -1,5 +1,6 @@
 extern crate ms;
 
+// Microservice
 use diesel;
 use env_logger;
 use hyper::service::{make_service_fn, service_fn};
@@ -8,10 +9,12 @@ use log::{error, info};
 use serde::Deserialize;
 use serde_json::{from_str, json, to_string_pretty, Map, Value};
 
+// Time
 use chrono::offset::Utc;
 use chrono::DateTime;
 use std::time::SystemTime;
 
+// Postgres
 use self::diesel::prelude::*;
 use self::models::*;
 use self::ms::*;
@@ -23,14 +26,13 @@ struct WritePayload {
     body: String,
 }
 
-/*          ###############
-            Practice RS API
-                ROUTES
-            ###############
+/*#######################################################
+    Practice RS API ROUTES:
 
-   /        => Get Most Recent Journal Entries
-   /write   => Add New Journal Entry
-   /health  => Return Message & Machine Timestamp  */
+    /        => Get Most Recent Journal Entries
+    /write   => Add New Journal Entry
+    /health  => Return Message & Machine Timestamp  
+#######################################################*/
 async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     let mut response = Response::new(Body::empty());
     match (req.method(), req.uri().path()) {

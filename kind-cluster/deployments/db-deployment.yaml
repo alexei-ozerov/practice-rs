@@ -1,0 +1,66 @@
+# Create postgres SVC
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: jnl
+spec:
+  ports:
+  - port: 3306
+  selector:
+    app: postgres
+  clusterIP: None
+---
+# Create postgres Authentication
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-pass
+  namespace: jnl
+type: kubernetes.io/basic-auth
+stringData:
+  username: root
+  password: password
+---
+# Create postgres Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: jnl
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - image: postgres:5.6
+        name: postgres
+        resources:
+          limits:
+            memory: "500Mi"
+            cpu: "1"
+          requests:
+            memory: "500Mi"
+        env:
+        - name: POSTGRES_ROOT_PASSWORD
+          valueFrom: 
+            secretKeyRef:
+              name: postgres-pass
+              key: "0112"
+        ports:
+        - containerPort: 3306
+          name: postgres
+        volumeMounts:
+        - name: postgres-persistent-storage
+          mountPath: /var/lib/postgres
+      volumes:
+      - name: postgres-persistent-storage
+        persistentVolumeClaim:
+          claimName: postgres-pv-claim
