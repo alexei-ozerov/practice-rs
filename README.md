@@ -25,6 +25,8 @@ An application created for logging practice progress for a specific user, writte
 5. Shut down stack with `docker-compose down` in `practice-rs/`
 
 ### Kubernetes Deployment
+NOTE: The deployment files are currently in-development, and not ready to be used. The instructions to stand up a K8s Local Cluster are valid, however, the deployment files will need to be configured before they can be used. Please build the images locally, push to the local repository that will come up with the cluster, and deploy using your own means for now. This message will be removed once the deployment .yaml files are tested and working.
+
 #### Dependencies
 1. KinD: https://kind.sigs.k8s.io/docs/user/quick-start/
 
