@@ -1,3 +1,4 @@
 /db/data
 /ms/logging-ms/target
 .env
+scratch.txt
