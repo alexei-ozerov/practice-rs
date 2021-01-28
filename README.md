@@ -3,6 +3,12 @@ An application created for logging practice progress for a specific user, writte
 
 ## Installation & Deployment
 ### Local Development Setup
+#### Dependencies
+1. Docker: https://www.docker.com/
+2. Docker-Compose: https://docs.docker.com/compose/install/
+3. Diesel: https://diesel.rs/
+
+#### Instructions
 1. Edit values `POSTGRES_USER` and `POSTGRES_PASSWORD` in in `db/docker-compose.yaml`
 2. Run the docker-compose file in `db/` using `docker-compose up -d`
 3. Navigate to `ms/logging-ms/` and run `diesel setup && diesel migration`
@@ -17,3 +23,13 @@ An application created for logging practice progress for a specific user, writte
 3. Verify both db and ms containers are up and running.
 4. Test with `curl localhost:3001/health`
 5. Shut down stack with `docker-compose down` in `practice-rs/`
+
+### Kubernetes Deployment
+#### Dependencies
+1. KinD: https://kind.sigs.k8s.io/docs/user/quick-start/
+
+#### Instructions
+1. Navigate to `practice-rs`
+2. Run `bash manage-kind-cluster.sh create`
+3. Build and push images to local registry on localhost:5000
+4. Deploy to Kubernetes cluster as desired.
