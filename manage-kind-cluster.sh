@@ -24,9 +24,9 @@ if [[ $1 == "create" ]]; then
   # Connect the local Docker registry with the kind network
   docker network connect "kind" "${reg_name}" > /dev/null 2>&1 &
 
-  # Deploy Nginx Ingress
+  # Deploy Nginx Ingress & Create Namespace
   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/kind/deploy.yaml
-
+  kubectl create namespace jnl
   echo -e "\n\n Cluster Spun Up!"
 
 # Delete Cluster

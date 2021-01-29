@@ -7,7 +7,7 @@ metadata:
   labels:
     app: postgres
 data:
-  POSTGRES_DB: echo
+  POSTGRES_DB: aozerov
   POSTGRES_USER: aozerov
   POSTGRES_PASSWORD: "0112"
 ---
