@@ -25,9 +25,10 @@ if [[ $1 == "create" ]]; then
   docker network connect "kind" "${reg_name}" > /dev/null 2>&1 &
 
   # Deploy Nginx Ingress & Create Namespace
+  echo -e "\nCreating Nginx Ingress & Namespace\n"
   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/kind/deploy.yaml
   kubectl create namespace jnl
-  echo -e "\n\n Cluster Spun Up!"
+  echo -e "\n\nCluster Spun Up!"
 
 # Delete Cluster
 elif [[ $1 == "delete" ]]; then
