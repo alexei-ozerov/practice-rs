@@ -28,8 +28,9 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
 
             let mut map = Map::new();
             for t in resp.into_iter() {
-                map.insert("Title_".to_owned() + &t.2.to_string(), Value::String(t.0));
-                map.insert("Body_".to_owned() + &t.2.to_string(), Value::String(t.1));
+                map.insert("Date_".to_owned() + &t.3.to_string(), Value::String(t.0));
+                map.insert("Title_".to_owned() + &t.3.to_string(), Value::String(t.1));
+                map.insert("Body_".to_owned() + &t.3.to_string(), Value::String(t.2));
             }
             let json_string = json!(map);
             let resp_string = to_string_pretty(&json_string).unwrap();
