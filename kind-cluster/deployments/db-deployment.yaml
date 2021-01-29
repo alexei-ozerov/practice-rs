@@ -1,3 +1,16 @@
+# Create postgres config map
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: jnl
+  labels:
+    app: postgres
+data:
+  POSTGRES_DB: echo
+  POSTGRES_USER: aozerov
+  POSTGRES_PASSWORD: "0112"
+---
 # Create postgres SVC
 apiVersion: v1
 kind: Service
@@ -5,22 +18,23 @@ metadata:
   name: postgres
   namespace: jnl
 spec:
+  type: NodePort
   ports:
-  - port: 3306
+  - port: 5432
+    nodePort: 30432
   selector:
     app: postgres
-  clusterIP: None
 ---
 # Create postgres Authentication
 apiVersion: v1
 kind: Secret
 metadata:
-  name: postgres-pass
+  name: postgres-auth
   namespace: jnl
 type: kubernetes.io/basic-auth
 stringData:
   username: root
-  password: password
+  password: "0112"
 ---
 # Create postgres Deployment
 apiVersion: apps/v1
@@ -40,8 +54,11 @@ spec:
         app: postgres
     spec:
       containers:
-      - image: postgres:5.6
+      - image: postgres:10.4
         name: postgres
+        envFrom:
+          - configMapRef:
+              name: postgres-config
         resources:
           limits:
             memory: "500Mi"
@@ -52,14 +69,14 @@ spec:
         - name: POSTGRES_ROOT_PASSWORD
           valueFrom: 
             secretKeyRef:
-              name: postgres-pass
-              key: "0112"
+              name: postgres-auth
+              key: password
         ports:
-        - containerPort: 3306
+        - containerPort: 5432
           name: postgres
         volumeMounts:
         - name: postgres-persistent-storage
-          mountPath: /var/lib/postgres
+          mountPath: /var/lib/postgresql/data
       volumes:
       - name: postgres-persistent-storage
         persistentVolumeClaim:
