@@ -1,25 +1,34 @@
 #![recursion_limit = "256"]
 
-use yew::format::{Json, Nothing};
-use serde::Deserialize;
-use yew::services::fetch::{FetchService, Request, Response};
-use wasm_logger;
 use anyhow::Error;
-use wasm_bindgen::prelude::*;
-use yew::prelude::*;
 use log;
+use wasm_bindgen::prelude::*;
+use wasm_logger;
+use yew::format::{Json, Nothing};
+use yew::prelude::*;
+use yew::services::fetch::{FetchService, FetchTask, Request, Response};
+use serde::{Serialize, Deserialize};
 
 struct Model {
     link: ComponentLink<Self>,
     title: String,
     value: i64,
     data: String,
+    task: Option<FetchTask>,
 }
 
-#[derive(Deserialize)]
-#[derive(Debug)]
+// TODO: Figure out a way to make deserialization dynamic as the response will be differenly sized based on the amount of data in DB
+#[derive(Serialize, Deserialize, Debug)]
 struct Data {
-   value: String
+    Date_1: String,
+    Date_2: String,
+    Date_3: String,
+    Goal_1: String,
+    Goal_2: String,
+    Goal_3: String,
+    Title_1: String,
+    Title_2: String,
+    Title_3: String,
 }
 
 enum Msg {
@@ -41,6 +50,7 @@ impl Component for Model {
             value: 0,
             title: "Practice Journal".to_string(),
             data: "".to_string(),
+            task: None,
         }
     }
 
@@ -51,21 +61,30 @@ impl Component for Model {
             Msg::Reset => self.value = 0,
             Msg::Request => {
                 {
-                    let get_request = Request::get("http://0.0.0.0:3000/recent").body(Nothing).unwrap();
-                    let callback = self.link.callback(|response: Response<Json<Result<Data, Error>>>| {
-                        log::info!("{:#?}", &response);
-                        if let (meta, Json(Ok(body))) = response.into_parts() {
-                            log::info!("{:#?}", meta);
-                            if meta.status.is_success() {
-                                return Msg::FetchResourceComplete;
-                            }
-                        }
-                        Msg::FetchResourceFailed
-                    });
-                    
+                    let get_request = Request::builder()
+                        .method("GET")
+                        .uri("http://127.0.0.1:3000/recent")
+                        .header("Access-Control-Allow-Origin", "*")
+                        .header("Access-Control-Allow-Headers", "*")
+                        .body(Nothing)
+                        .unwrap();
+
+                    // TODO: Get the processed JSON file into self.data
+                    let callback =
+                        self.link
+                            .callback(|response: Response<Json<Result<Data, Error>>>| {
+                                log::info!("{:#?}", &response);
+                                if let (meta, Json(Ok(body))) = response.into_parts() {
+                                    if meta.status.is_success() {
+                                        self.data = serde_json::to_string(&body).unwrap().clone();
+                                        return Msg::FetchResourceComplete;
+                                    }
+                                }
+                                Msg::FetchResourceFailed
+                            });
+
                     let task = FetchService::fetch(get_request, callback);
-                    log::info!("{:#?}", task);
-                    
+                    self.task = Some(task.unwrap());
                 };
             }
             _ => {}

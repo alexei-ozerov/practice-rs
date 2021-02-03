@@ -18,7 +18,11 @@ use std::time::SystemTime;
     /health  => Return Message & Machine Timestamp
 #######################################################*/
 async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
-    let mut response = Response::new(Body::empty());
+    let mut response = Response::builder()
+        .header("Access-Control-Allow-Origin", "*")
+        .header("Access-Control-Allow-Headers", "*")
+        .body(Body::empty())
+        .unwrap();
     match (req.method(), req.uri().path()) {
         // Base Route
         (&Method::GET, "/") => {
@@ -65,6 +69,21 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
                 Body::from("The API is active | ".to_owned() + &datetime.to_string())
         }
 
+        (&Method::OPTIONS, "/health") => {
+            info!("Received OPTIONS Request: {:?}", req);
+            *response.status_mut() = StatusCode::OK;
+        }
+
+        (&Method::OPTIONS, "/recent") => {
+            info!("Received OPTIONS Request: {:?}", req);
+            *response.status_mut() = StatusCode::OK;
+        }
+
+        (&Method::OPTIONS, "/write") => {
+            info!("Received OPTIONS Request: {:?}", req);
+            *response.status_mut() = StatusCode::OK;
+        }
+
         // Return Error
         _ => {
             error!("Received INVALID Request: {:?}", req);
@@ -79,7 +98,7 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     env_logger::init();
 
-    let addr = ([0, 0, 0, 0], 3000).into();
+    let addr = ([127, 0, 0, 1], 3000).into();
     let svc = make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(router)) });
     let server = Server::bind(&addr).serve(svc);
 
