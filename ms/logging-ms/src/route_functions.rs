@@ -17,7 +17,7 @@ struct WritePayload {
     body: String,
     notes: String,
     pract_time: i32,
-    focus_time: i32
+    focus_time: i32,
 }
 
 // Retrieve Recent Practice Journal Entries
@@ -32,7 +32,7 @@ pub async fn show_journal() -> Result<Vec<(String, String, String, i32)>, hyper:
         .expect("Error loading posts");
 
     info!("Retrieved {} entries", results.len());
-    
+
     for entry in results {
         info!("{:?}", entry.id);
         info!("{:?}", entry.title);
@@ -54,7 +54,15 @@ pub async fn write_journal(payload: String) -> Result<(), hyper::Error> {
     let pract_time = json_obj.pract_time;
     let focus_time = json_obj.focus_time;
 
-    let post = create_post(&connection, &pract_date, &title, &body, &notes, &pract_time, &focus_time);
+    let post = create_post(
+        &connection,
+        &pract_date,
+        &title,
+        &body,
+        &notes,
+        &pract_time,
+        &focus_time,
+    );
     info!("Saved record {} with id {}", title, post.id);
     Ok(())
 }

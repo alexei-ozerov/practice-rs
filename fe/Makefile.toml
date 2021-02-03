@@ -1,0 +1,8 @@
+[tasks.build]
+command = "wasm-pack"
+args = ["build", "--target", "web", "--out-name", "wasm", "--out-dir", "./static"]
+watch = { ignore_pattern = "static/*" }
+
+[tasks.serve]
+command = "miniserve"
+args = ["./staticm", "--index", "index.html"]

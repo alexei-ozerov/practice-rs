@@ -20,7 +20,15 @@ pub fn establish_connection() -> PgConnection {
 }
 
 // Write Data To Database
-pub fn create_post<'a>(conn: &PgConnection, pract_date: &'a str, title: &'a str, body: &'a str, notes: &'a str, pract_time: &i32, focus_time: &i32) -> Entry {
+pub fn create_post<'a>(
+    conn: &PgConnection,
+    pract_date: &'a str,
+    title: &'a str,
+    body: &'a str,
+    notes: &'a str,
+    pract_time: &i32,
+    focus_time: &i32,
+) -> Entry {
     use schema::entries;
 
     let new_entry = NewEntry {

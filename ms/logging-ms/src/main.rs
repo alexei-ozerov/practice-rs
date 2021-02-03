@@ -22,7 +22,7 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     let mut response = Response::new(Body::empty());
     match (req.method(), req.uri().path()) {
         // Return Message From DB
-        (&Method::GET, "/") => {
+        (&Method::GET, "/recent") => {
             info!("Received GET Request: {:?}", req);
             let resp = route_functions::show_journal().await?;
 
@@ -78,10 +78,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let svc = make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(router)) });
     let server = Server::bind(&addr).serve(svc);
 
-    println!("\n\n###################################");
-    println!("Starting Server\nListening on http://{}", addr);
-    println!("###################################\n");
-    server.await?;
+    println!(
+        "\n\n
+        ###################################\n
+        Starting Server
+        Listening on http://{}\n
+        ###################################\n",
+        addr
+    );
 
+    server.await?;
     Ok(())
 }
