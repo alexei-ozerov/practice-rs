@@ -1,4 +1,4 @@
-#![recursion_limit = "256"]
+#![recursion_limit = "512"]
 
 use anyhow::Error;
 use log;
@@ -9,16 +9,8 @@ use yew::prelude::*;
 use yew::services::fetch::{FetchService, FetchTask, Request, Response};
 use serde::{Serialize, Deserialize};
 
-struct Model {
-    link: ComponentLink<Self>,
-    title: String,
-    value: i64,
-    data: String,
-    task: Option<FetchTask>,
-}
-
 // TODO: Figure out a way to make deserialization dynamic as the response will be differenly sized based on the amount of data in DB
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 struct Data {
     Date_1: String,
     Date_2: String,
@@ -31,12 +23,20 @@ struct Data {
     Title_3: String,
 }
 
+struct Model {
+    link: ComponentLink<Self>,
+    title: String,
+    value: i64,
+    data: Data,
+    task: Option<FetchTask>,
+}
+
 enum Msg {
     AddOne,
     AddSix,
     Reset,
     Request,
-    FetchResourceComplete,
+    FetchResourceComplete(Data),
     FetchResourceFailed,
 }
 
@@ -49,7 +49,7 @@ impl Component for Model {
             link,
             value: 0,
             title: "Practice Journal".to_string(),
-            data: "".to_string(),
+            data: Data::default(),
             task: None,
         }
     }
@@ -69,15 +69,14 @@ impl Component for Model {
                         .body(Nothing)
                         .unwrap();
 
-                    // TODO: Get the processed JSON file into self.data
                     let callback =
                         self.link
                             .callback(|response: Response<Json<Result<Data, Error>>>| {
                                 log::info!("{:#?}", &response);
                                 if let (meta, Json(Ok(body))) = response.into_parts() {
                                     if meta.status.is_success() {
-                                        self.data = serde_json::to_string(&body).unwrap().clone();
-                                        return Msg::FetchResourceComplete;
+                                        // self.data = serde_json::to_string(&body).unwrap().clone();
+                                        return Msg::FetchResourceComplete(body);
                                     }
                                 }
                                 Msg::FetchResourceFailed
@@ -87,6 +86,7 @@ impl Component for Model {
                     self.task = Some(task.unwrap());
                 };
             }
+            Msg::FetchResourceComplete(body) => self.data = body,
             _ => {}
         }
         true
@@ -113,7 +113,19 @@ impl Component for Model {
                 </table>
                 <p class="count">{ self.value }</p>
                 <br/>
-                <p>{ &self.data }</p>
+                <table class="attr">
+                    <tr>
+                        <td>{"Title"}</td>
+                        <td>{"Date"}</td>
+                        <td>{"Goal"}</td>
+                    </tr>
+                    <br/>
+                    <tr>
+                        <td>{{ &self.data.Title_1 }}</td>
+                        <td>{{ &self.data.Date_1 }}</td>
+                        <td>{{ &self.data.Goal_1 }}</td>
+                    </tr>
+                </table>
             </div>
         }
     }

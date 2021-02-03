@@ -69,6 +69,7 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
                 Body::from("The API is active | ".to_owned() + &datetime.to_string())
         }
 
+        // Handle OPTIONS requests
         (&Method::OPTIONS, "/health") => {
             info!("Received OPTIONS Request: {:?}", req);
             *response.status_mut() = StatusCode::OK;
@@ -98,6 +99,7 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     env_logger::init();
 
+    // TODO: Add ENV file configuration for addr to differentiate between local and containerized
     let addr = ([127, 0, 0, 1], 3000).into();
     let svc = make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(router)) });
     let server = Server::bind(&addr).serve(svc);
