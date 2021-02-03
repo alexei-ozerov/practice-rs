@@ -24,7 +24,7 @@ pub fn create_post<'a>(
     conn: &PgConnection,
     pract_date: &'a str,
     title: &'a str,
-    body: &'a str,
+    goal: &'a str,
     notes: &'a str,
     pract_time: &i32,
     focus_time: &i32,
@@ -34,7 +34,7 @@ pub fn create_post<'a>(
     let new_entry = NewEntry {
         pract_date: pract_date,
         title: title,
-        body: body,
+        goal: goal,
         notes: notes,
         pract_time: pract_time,
         focus_time: focus_time,

@@ -5,7 +5,6 @@ use env_logger;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use log::{error, info};
-
 use chrono::offset::Utc;
 use chrono::DateTime;
 use serde_json::{json, to_string_pretty, Map, Value};
@@ -21,6 +20,12 @@ use std::time::SystemTime;
 async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     let mut response = Response::new(Body::empty());
     match (req.method(), req.uri().path()) {
+        // Base Route
+        (&Method::GET, "/") => {
+            info!("Received GET Request: {:?}", req);
+            *response.body_mut() = Body::from("Welcome to the Practice Journal Application. Please visit the appropriate route if using CURL to read / write data.")
+        }
+
         // Return Message From DB
         (&Method::GET, "/recent") => {
             info!("Received GET Request: {:?}", req);
@@ -30,7 +35,7 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
             for t in resp.into_iter() {
                 map.insert("Date_".to_owned() + &t.3.to_string(), Value::String(t.0));
                 map.insert("Title_".to_owned() + &t.3.to_string(), Value::String(t.1));
-                map.insert("Body_".to_owned() + &t.3.to_string(), Value::String(t.2));
+                map.insert("Goal_".to_owned() + &t.3.to_string(), Value::String(t.2));
             }
             let json_string = json!(map);
             let resp_string = to_string_pretty(&json_string).unwrap();
