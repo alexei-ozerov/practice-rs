@@ -1,12 +1,12 @@
 extern crate ms;
 mod route_functions;
 
+use chrono::offset::Utc;
+use chrono::DateTime;
 use env_logger;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use log::{error, info};
-use chrono::offset::Utc;
-use chrono::DateTime;
 use serde_json::{json, to_string_pretty, Map, Value};
 use std::time::SystemTime;
 
