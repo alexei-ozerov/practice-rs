@@ -29,6 +29,7 @@ pub async fn show_journal() -> Result<Vec<(String, String, String, i32)>, hyper:
     let connection = establish_connection();
     let results = entries
         .limit(5)
+        .order_by(id.desc())
         .load::<Entry>(&connection)
         .expect("Error loading posts");
 

@@ -39,15 +39,6 @@ async fn router(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
             let resp = route_functions::show_journal().await?;
             let resp_string = route_functions::return_journal(resp).await?;
 
-            // let mut map = Map::new();
-            // for t in resp.into_iter() {
-            //     map.insert("Date_".to_owned() + &t.3.to_string(), Value::String(t.0));
-            //     map.insert("Title_".to_owned() + &t.3.to_string(), Value::String(t.1));
-            //     map.insert("Goal_".to_owned() + &t.3.to_string(), Value::String(t.2));
-            // }
-            // let json_string = json!(map);
-            // let resp_string = to_string_pretty(&json_string).unwrap();
-
             info!("Retreived Data: {:?}", resp_string);
             *response.body_mut() = Body::from(resp_string)
         }

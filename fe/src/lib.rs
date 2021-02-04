@@ -1,4 +1,4 @@
-#![recursion_limit = "512"]
+#![recursion_limit = "1024"]
 
 use anyhow::Error;
 use log;
@@ -8,6 +8,7 @@ use wasm_logger;
 use yew::format::{Json, Nothing};
 use yew::prelude::*;
 use yew::services::fetch::{FetchService, FetchTask, Request, Response};
+use yew::virtual_dom::*;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 struct Data {
@@ -42,7 +43,12 @@ impl Component for Model {
             link,
             value: 0,
             title: "Practice Journal".to_string(),
-            data: Data::default(),
+            // initialize with empty data
+            data: Data {
+                date: vec!["".to_string()],
+                title: vec!["".to_string()],
+                goal: vec!["".to_string()],
+            },
             task: None,
         }
     }
@@ -54,6 +60,7 @@ impl Component for Model {
             Msg::Reset => self.value = 0,
             Msg::Request => {
                 {
+                    // Construct Request
                     let get_request = Request::builder()
                         .method("GET")
                         .uri("http://127.0.0.1:3000/recent")
@@ -62,10 +69,10 @@ impl Component for Model {
                         .body(Nothing)
                         .unwrap();
 
+                    // Return Failure or Success via Msg
                     let callback =
                         self.link
                             .callback(|response: Response<Json<Result<Data, Error>>>| {
-                                // log::info!("{:#?}", &response);
                                 if let (meta, Json(Ok(body))) = response.into_parts() {
                                     if meta.status.is_success() {
                                         return Msg::FetchResourceComplete(body);
@@ -74,13 +81,13 @@ impl Component for Model {
                                 Msg::FetchResourceFailed
                             });
 
+                    // Execute Task & Store
                     let task = FetchService::fetch(get_request, callback);
                     self.task = Some(task.unwrap());
                 };
             }
             Msg::FetchResourceComplete(body) => {
                 self.data = body;
-                log::info!("{:#?}", self.data.date[0]);
             }
             _ => {}
         }
@@ -95,6 +102,35 @@ impl Component for Model {
     }
 
     fn view(&self) -> Html {
+        // Generate Journal Entries UI
+        let mut data_ui = VList::new();
+        let header = html! {
+            <>
+            <tr>
+                <td>{"Title"}</td>
+                <td>{"Date"}</td>
+                <td>{"Goal"}</td>
+            </tr>
+            </>
+        };
+        data_ui.add_child(header);
+
+        let entry_count = &self.data.date.len();
+        for i in 0..*entry_count as i32 {
+            data_ui.add_child(
+                html! {
+                    <>
+                    <br/>
+                    <tr>
+                        <td>{{ &self.data.date[i as usize] }}</td>
+                        <td>{{ &self.data.title[i as usize] }}</td>
+                        <td>{{ &self.data.goal[i as usize] }}</td>
+                    </tr>
+                    </>
+                }
+            );
+        }
+
         html! {
             <div>
                 <h1>{ &self.title }</h1>
@@ -110,17 +146,7 @@ impl Component for Model {
                 <p class="count">{ self.value }</p>
                 <br/>
                 <table class="attr">
-                    <tr>
-                        <td>{"Title"}</td>
-                        <td>{"Date"}</td>
-                        <td>{"Goal"}</td>
-                    </tr>
-                    <br/>
-                    <tr>
-                        // <td>{{ self.data.date[0].clone() }}</td>
-                        // <td>{{ &self.data.title[0] }}</td>
-                        // <td>{{ &self.data.goal[0] }}</td>
-                    </tr>
+                    {{ data_ui }}
                 </table>
             </div>
         }
