@@ -20,14 +20,11 @@ struct Data {
 struct Model {
     link: ComponentLink<Self>,
     title: String,
-    value: i64,
     data: Data,
     task: Option<FetchTask>,
 }
 
 enum Msg {
-    AddOne,
-    AddSix,
     Reset,
     Request,
     FetchResourceComplete(Data),
@@ -41,7 +38,6 @@ impl Component for Model {
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
         Self {
             link,
-            value: 0,
             title: "Practice Journal".to_string(),
             // initialize with empty data
             data: Data {
@@ -55,9 +51,11 @@ impl Component for Model {
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Msg::AddOne => self.value += 1,
-            Msg::AddSix => self.value += 6,
-            Msg::Reset => self.value = 0,
+            Msg::Reset => self.data = Data {
+                date: vec!["".to_string()],
+                title: vec!["".to_string()],
+                goal: vec!["".to_string()],
+            },
             Msg::Request => {
                 {
                     // Construct Request
@@ -104,48 +102,59 @@ impl Component for Model {
     fn view(&self) -> Html {
         // Generate Journal Entries UI
         let mut data_ui = VList::new();
-        let header = html! {
-            <>
-            <tr>
-                <td>{"Title"}</td>
-                <td>{"Date"}</td>
-                <td>{"Goal"}</td>
-            </tr>
-            </>
-        };
-        data_ui.add_child(header);
-
-        let entry_count = &self.data.date.len();
-        for i in 0..*entry_count as i32 {
+        if self.data.date[0] != "".to_string() {
+            let header = html! {
+                <>
+                <thead>
+                <tr>
+                    <th>{"Title"}</th>
+                    <th>{"Date"}</th>
+                    <th>{"Goal"}</th>
+                </tr>
+                </thead>
+                </>
+            };
+            data_ui.add_child(header);
+    
+            let mut table_data = VList::new();
+            let entry_count = &self.data.date.len();
+            for i in 0..*entry_count as i32 {
+                table_data.add_child(
+                    html! {
+                        <>
+                        <tr>
+                            <td>{{ &self.data.date[i as usize] }}</td>
+                            <td>{{ &self.data.title[i as usize] }}</td>
+                            <td>{{ &self.data.goal[i as usize] }}</td>
+                        </tr>
+                        </>
+                    }
+                );
+            }
             data_ui.add_child(
-                html! {
+                html!{
                     <>
-                    <br/>
-                    <tr>
-                        <td>{{ &self.data.date[i as usize] }}</td>
-                        <td>{{ &self.data.title[i as usize] }}</td>
-                        <td>{{ &self.data.goal[i as usize] }}</td>
-                    </tr>
+                    <tbody>
+                        {{ table_data }}
+                    </tbody>
                     </>
                 }
-            );
+            )
         }
-
+        
         html! {
             <div>
                 <h1>{ &self.title }</h1>
                 <p class="entry">{ "Welcome. Please choose an option from below to get started. You're doing great." }</p>
-                <table class="attr">
+                <br/>
+                <table class="buttons">
                     <tr>
                         <td><button onclick=self.link.callback(|_| Msg::Request)>{ "View Recent Entries" }</button></td>
-                        <td><button onclick=self.link.callback(|_| Msg::Reset)>{ "Reset Counter" }</button></td>
-                        <td><button onclick=self.link.callback(|_| Msg::AddOne)>{ "Add One" }</button></td>
-                        <td><button onclick=self.link.callback(|_| Msg::AddSix)>{ "Add Six" }</button></td>
+                        <td><button onclick=self.link.callback(|_| Msg::Reset)>{ "Clear Recent Entries" }</button></td>
                     </tr>
                 </table>
-                <p class="count">{ self.value }</p>
                 <br/>
-                <table class="attr">
+                <table class="styled-table">
                     {{ data_ui }}
                 </table>
             </div>
