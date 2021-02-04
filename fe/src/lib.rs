@@ -103,12 +103,13 @@ impl Component for Model {
         html! {
             <div>
                 <h1>{ &self.title }</h1>
+                <p class="entry">{ "Welcome. Please choose an option from below to get started. You're doing great." }</p>
                 <table class="attr">
                     <tr>
+                        <td><button onclick=self.link.callback(|_| Msg::Request)>{ "View Recent Entries" }</button></td>
+                        <td><button onclick=self.link.callback(|_| Msg::Reset)>{ "Reset Counter" }</button></td>
                         <td><button onclick=self.link.callback(|_| Msg::AddOne)>{ "Add One" }</button></td>
                         <td><button onclick=self.link.callback(|_| Msg::AddSix)>{ "Add Six" }</button></td>
-                        <td><button onclick=self.link.callback(|_| Msg::Reset)>{ "Reset" }</button></td>
-                        <td><button onclick=self.link.callback(|_| Msg::Request)>{ "View Recent Entries" }</button></td>
                     </tr>
                 </table>
                 <p class="count">{ self.value }</p>
@@ -124,6 +125,18 @@ impl Component for Model {
                         <td>{{ &self.data.Title_1 }}</td>
                         <td>{{ &self.data.Date_1 }}</td>
                         <td>{{ &self.data.Goal_1 }}</td>
+                    </tr>
+                    <br/>
+                    <tr>
+                        <td>{{ &self.data.Title_2 }}</td>
+                        <td>{{ &self.data.Date_2 }}</td>
+                        <td>{{ &self.data.Goal_2 }}</td>
+                    </tr>
+                    <br/>
+                    <tr>
+                        <td>{{ &self.data.Title_3 }}</td>
+                        <td>{{ &self.data.Date_3 }}</td>
+                        <td>{{ &self.data.Goal_3 }}</td>
                     </tr>
                 </table>
             </div>

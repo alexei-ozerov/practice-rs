@@ -2,8 +2,9 @@ extern crate ms;
 
 use diesel;
 use log::info;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::from_str;
+use serde_json::{json, to_string_pretty};
 
 use self::diesel::prelude::*;
 use self::models::*;
@@ -40,6 +41,42 @@ pub async fn show_journal() -> Result<Vec<(String, String, String, i32)>, hyper:
     }
 
     Ok(reponse_vec)
+}
+
+#[derive(Deserialize, Serialize, Debug, Default)]
+struct JournalData {
+    Date: Vec<String>,
+    Title: Vec<String>,
+    Goal: Vec<String>,
+}
+
+// Format the Response Object
+pub async fn return_journal(
+    resp: Vec<(String, String, String, i32)>,
+) -> Result<String, hyper::Error> {
+    // Instantiate Vecs
+    let mut dateVec: Vec<String> = Vec::new();
+    let mut titleVec: Vec<String> = Vec::new();
+    let mut goalVec: Vec<String> = Vec::new();
+
+    // Push Data
+    for t in resp.into_iter() {
+        dateVec.push(t.0);
+        titleVec.push(t.1);
+        goalVec.push(t.2);
+    }
+
+    // Instantiate Struct
+    let mut map = JournalData {
+        Date: dateVec,
+        Title: titleVec,
+        Goal: goalVec,
+    };
+
+    // Convert to Json String
+    let json_string = json!(map);
+    let resp_string = to_string_pretty(&json_string).unwrap();
+    Ok(resp_string)
 }
 
 // Write Practice Journal Entry (via JSON payload)
