@@ -45,9 +45,9 @@ pub async fn show_journal() -> Result<Vec<(String, String, String, i32)>, hyper:
 
 #[derive(Deserialize, Serialize, Debug, Default)]
 struct JournalData {
-    Date: Vec<String>,
-    Title: Vec<String>,
-    Goal: Vec<String>,
+    date: Vec<String>,
+    title: Vec<String>,
+    goal: Vec<String>,
 }
 
 // Format the Response Object
@@ -67,10 +67,10 @@ pub async fn return_journal(
     }
 
     // Instantiate Struct
-    let mut map = JournalData {
-        Date: dateVec,
-        Title: titleVec,
-        Goal: goalVec,
+    let map = JournalData {
+        date: dateVec,
+        title: titleVec,
+        goal: goalVec,
     };
 
     // Convert to Json String

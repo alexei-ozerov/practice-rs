@@ -2,25 +2,18 @@
 
 use anyhow::Error;
 use log;
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 use wasm_logger;
 use yew::format::{Json, Nothing};
 use yew::prelude::*;
 use yew::services::fetch::{FetchService, FetchTask, Request, Response};
-use serde::{Serialize, Deserialize};
 
-// TODO: Figure out a way to make deserialization dynamic as the response will be differenly sized based on the amount of data in DB
 #[derive(Serialize, Deserialize, Debug, Default)]
 struct Data {
-    Date_1: String,
-    Date_2: String,
-    Date_3: String,
-    Goal_1: String,
-    Goal_2: String,
-    Goal_3: String,
-    Title_1: String,
-    Title_2: String,
-    Title_3: String,
+    date: Vec<String>,
+    title: Vec<String>,
+    goal: Vec<String>,
 }
 
 struct Model {
@@ -72,10 +65,9 @@ impl Component for Model {
                     let callback =
                         self.link
                             .callback(|response: Response<Json<Result<Data, Error>>>| {
-                                log::info!("{:#?}", &response);
+                                // log::info!("{:#?}", &response);
                                 if let (meta, Json(Ok(body))) = response.into_parts() {
                                     if meta.status.is_success() {
-                                        // self.data = serde_json::to_string(&body).unwrap().clone();
                                         return Msg::FetchResourceComplete(body);
                                     }
                                 }
@@ -86,7 +78,10 @@ impl Component for Model {
                     self.task = Some(task.unwrap());
                 };
             }
-            Msg::FetchResourceComplete(body) => self.data = body,
+            Msg::FetchResourceComplete(body) => {
+                self.data = body;
+                log::info!("{:#?}", self.data.date[0]);
+            }
             _ => {}
         }
         true
@@ -122,21 +117,9 @@ impl Component for Model {
                     </tr>
                     <br/>
                     <tr>
-                        <td>{{ &self.data.Title_1 }}</td>
-                        <td>{{ &self.data.Date_1 }}</td>
-                        <td>{{ &self.data.Goal_1 }}</td>
-                    </tr>
-                    <br/>
-                    <tr>
-                        <td>{{ &self.data.Title_2 }}</td>
-                        <td>{{ &self.data.Date_2 }}</td>
-                        <td>{{ &self.data.Goal_2 }}</td>
-                    </tr>
-                    <br/>
-                    <tr>
-                        <td>{{ &self.data.Title_3 }}</td>
-                        <td>{{ &self.data.Date_3 }}</td>
-                        <td>{{ &self.data.Goal_3 }}</td>
+                        // <td>{{ self.data.date[0].clone() }}</td>
+                        // <td>{{ &self.data.title[0] }}</td>
+                        // <td>{{ &self.data.goal[0] }}</td>
                     </tr>
                 </table>
             </div>
