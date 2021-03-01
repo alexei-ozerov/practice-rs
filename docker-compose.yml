@@ -12,7 +12,7 @@ services:
   ms:
     image: practice-rs:ms
     environment:
-      MS_ADDR: MS_ADDR=0.0.0.0:3000
+      MS_ADDR: 0.0.0.0:3000
       DATABASE_URL: postgres://aozerov:0112@db:5432/echo_ms
     ports:
       - "3001:3000"
