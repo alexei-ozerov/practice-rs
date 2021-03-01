@@ -32,4 +32,7 @@ if [[ -z ${DB}  ]]; then
     exit 1
 fi
 
+echo -e "You will need the following: USER, PASS, ADDRESS, PORT, DB NAME."
+echo -e "An example: aozerov 0112 localhost 5433 echo_ms"
 echo DATABASE_URL=postgres://${USER}:${PASS}}@${ADDR}}:${PORT}/${DB} >> .env
+echo MS_ADDR=127.0.0.1:3000 >> .env

@@ -69,7 +69,7 @@ impl Component for Model {
                     // Construct Request
                     let get_request = Request::builder()
                         .method("GET")
-                        .uri("http://127.0.0.1:3000/recent")
+                        .uri("http://127.0.0.1:3001/recent")
                         .header("Access-Control-Allow-Origin", "*")
                         .header("Access-Control-Allow-Headers", "*")
                         .body(Nothing)
