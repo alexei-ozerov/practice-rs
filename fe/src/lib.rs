@@ -10,7 +10,6 @@ use yew::prelude::*;
 use yew::services::fetch::{FetchService, FetchTask, Request, Response};
 use yew::virtual_dom::*;
 
-
 #[derive(Serialize, Deserialize, Debug, Default)]
 struct Data {
     date: Vec<String>,
@@ -115,8 +114,16 @@ impl Component for Model {
             }
             Msg::PostRequest => {
                 log::info!("{:#?}", self.form_input);
-                
-                // Construct Request
+
+                // Construct Payload & Request
+                let payload: String = r#"{"title": "#.to_string()
+                    + &self.form_input.title
+                    + r#""goal:" "#
+                    + &self.form_input.goal
+                    + r#""notes:" "#
+                    + &self.form_input.notes
+                    + "}";
+
                 let post_request = Request::builder()
                     .method("POST")
                     .uri("http://127.0.0.1:3001/recent")
@@ -128,6 +135,7 @@ impl Component for Model {
                 // Send Request
                 // TODO: Create a SUCCESS element and message to call if a successful response is
                 // returned from the API
+                log::info!("{:#?}", payload);
                 log::info!("{:#?}", post_request);
             }
             Msg::Submit => {
@@ -159,7 +167,7 @@ impl Component for Model {
 
     fn view(&self) -> Html {
         let data_ui = build_table(&self.data);
-        
+
         let mut new_entry_form = VList::new();
         if self.form == "Yes".to_string() {
             new_entry_form = build_form(&self);
@@ -184,7 +192,7 @@ impl Component for Model {
                     {{ data_ui }}
                 </table>
             </div>
-            
+
         }
     }
 }
@@ -192,7 +200,7 @@ impl Component for Model {
 fn build_form(ctx: &Model) -> VList {
     let mut form_ui = VList::new();
     form_ui.add_child({
-        html!{
+        html! {
             <>
             <div class="container">
             <form onsubmit=ctx.link.callback(|_| Msg::PostRequest)>
@@ -201,11 +209,11 @@ fn build_form(ctx: &Model) -> VList {
                   <label for="fname">{"Title"}</label>
                 </div>
                 <div class="col-75">
-                  <input 
-                    type="text" 
-                    id="fname" 
-                    name="firstname" 
-                    oninput=ctx.link.callback(|e: InputData| Msg::TitleUpdate(e.value)) 
+                  <input
+                    type="text"
+                    id="fname"
+                    name="firstname"
+                    oninput=ctx.link.callback(|e: InputData| Msg::TitleUpdate(e.value))
                     placeholder="Practice Session Title..."
                   />
                 </div>
@@ -215,10 +223,10 @@ fn build_form(ctx: &Model) -> VList {
                   <label for="lname">{"Goal"}</label>
                 </div>
                 <div class="col-75">
-                  <input 
-                    type="text" 
-                    id="lname" 
-                    name="lastname" 
+                  <input
+                    type="text"
+                    id="lname"
+                    name="lastname"
                     oninput=ctx.link.callback(|e: InputData| Msg::GoalUpdate(e.value))
                     placeholder="Practice Session Goal..."
                   />
@@ -229,10 +237,10 @@ fn build_form(ctx: &Model) -> VList {
                   <label for="notes">{"Notes"}</label>
                 </div>
                 <div class="col-75">
-                  <textarea 
-                    id="notes" 
-                    name="notes" 
-                    placeholder="Practice Session Notes..." 
+                  <textarea
+                    id="notes"
+                    name="notes"
+                    placeholder="Practice Session Notes..."
                     oninput=ctx.link.callback(|e: InputData| Msg::NotesUpdate(e.value))
                     style="height:200px"
                   />
@@ -271,27 +279,23 @@ fn build_table(data: &Data) -> VList {
         let mut table_data = VList::new();
         let entry_count = &data.date.len();
         for i in 0..*entry_count as i32 {
-            table_data.add_child(
-                html! {
-                    <>
-                    <tr>
-                        <td>{{ &data.date[i as usize] }}</td>
-                        <td>{{ &data.title[i as usize] }}</td>
-                        <td>{{ &data.goal[i as usize] }}</td>
-                    </tr>
-                    </>
-                }
-            );
-        }
-        data_ui.add_child(
-            html!{
+            table_data.add_child(html! {
                 <>
-                <tbody>
-                    {{ table_data }}
-                </tbody>
+                <tr>
+                    <td>{{ &data.date[i as usize] }}</td>
+                    <td>{{ &data.title[i as usize] }}</td>
+                    <td>{{ &data.goal[i as usize] }}</td>
+                </tr>
                 </>
-            }
-        )
+            });
+        }
+        data_ui.add_child(html! {
+            <>
+            <tbody>
+                {{ table_data }}
+            </tbody>
+            </>
+        })
     }
 
     data_ui
