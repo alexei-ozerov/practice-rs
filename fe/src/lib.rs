@@ -145,6 +145,7 @@ impl Component for Model {
                 let callback =
                     self.link
                         .callback(|response: Response<Json<Result<String, Error>>>| {
+                            log::info!("{:#?}", response);
                             if let (meta, Json(Ok(body))) = response.into_parts() {
                                 if meta.status.is_success() {
                                     return Msg::PostResourceComplete(body);
@@ -225,7 +226,7 @@ fn build_form(ctx: &Model) -> VList {
         html! {
             <>
             <div class="container">
-            <form onsubmit=ctx.link.callback(|_| Msg::PostRequest)>
+            <div>
               <div class="row">
                 <div class="col-25">
                   <label for="fname">{"Title"}</label>
@@ -270,9 +271,9 @@ fn build_form(ctx: &Model) -> VList {
               </div>
               <br/>
               <div class="row">
-                <button onclick=ctx.link.callback(|_| Msg::Submit)>{"Submit"}</button>
+                <button onclick=ctx.link.callback(|_| Msg::PostRequest)>{"Submit"}</button>
               </div>
-            </form>
+            </div>
           </div>
           </>
         }
