@@ -9,6 +9,7 @@ use yew::format::{Json, Nothing};
 use yew::prelude::*;
 use yew::services::fetch::{FetchService, FetchTask, Request, Response};
 use yew::virtual_dom::*;
+use yew::events::*;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 struct Data {
@@ -23,6 +24,7 @@ struct Model {
     title: String,
     data: Data,
     task: Option<FetchTask>,
+    form_input: String,
 }
 
 enum Msg {
@@ -32,6 +34,7 @@ enum Msg {
     Request,
     FetchResourceComplete(Data),
     FetchResourceFailed,
+    Form_Input(String),
 }
 
 impl Component for Model {
@@ -50,6 +53,7 @@ impl Component for Model {
                 goal: vec!["".to_string()],
             },
             task: None,
+            form_input: "".to_string(),
         }
     }
 
@@ -97,6 +101,10 @@ impl Component for Model {
             }
             Msg::Submit => {
                 log::info!("{:#?}", &self.data);
+            }
+            Msg::Form_Input(val) => {
+                self.form_input = val;
+                log::info!("{:#?}", self.form_input);
             }
             _ => {}
         }
@@ -148,13 +156,13 @@ fn build_form(ctx: &Model) -> VList {
         html!{
             <>
             <div class="container">
-            <form onclick=ctx.link.callback(|_| Msg::Submit)>
+            <form>
               <div class="row">
                 <div class="col-25">
                   <label for="fname">{"Title"}</label>
                 </div>
                 <div class="col-75">
-                  <input type="text" id="fname" name="firstname" placeholder="Practice Session Title..."/>
+                  <input type="text" id="fname" name="firstname" oninput=ctx.link.callback(|e: InputData| Msg::Form_Input(e.value)) placeholder="Practice Session Title..."/>
                 </div>
               </div>
               <div class="row">
@@ -175,7 +183,7 @@ fn build_form(ctx: &Model) -> VList {
               </div>
               <br/>
               <div class="row">
-                <input type="submit" value="Submit"/>
+                <button>{"Submit"}</button>
               </div>
             </form>
           </div>
