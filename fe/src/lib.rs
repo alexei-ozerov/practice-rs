@@ -9,7 +9,7 @@ use yew::format::{Json, Nothing};
 use yew::prelude::*;
 use yew::services::fetch::{FetchService, FetchTask, Request, Response};
 use yew::virtual_dom::*;
-use yew::events::*;
+
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 struct Data {
@@ -18,23 +18,33 @@ struct Data {
     goal: Vec<String>,
 }
 
+#[derive(Debug)]
+struct FormData {
+    title: String,
+    goal: String,
+    notes: String,
+}
+
 struct Model {
     link: ComponentLink<Self>,
     form: String,
     title: String,
     data: Data,
     task: Option<FetchTask>,
-    form_input: String,
+    form_input: FormData,
 }
 
 enum Msg {
     Form,
     Submit,
     Reset,
-    Request,
+    GetRequest,
+    PostRequest,
     FetchResourceComplete(Data),
     FetchResourceFailed,
-    Form_Input(String),
+    TitleUpdate(String),
+    GoalUpdate(String),
+    NotesUpdate(String),
 }
 
 impl Component for Model {
@@ -53,7 +63,11 @@ impl Component for Model {
                 goal: vec!["".to_string()],
             },
             task: None,
-            form_input: "".to_string(),
+            form_input: FormData {
+                title: "".to_string(),
+                goal: "".to_string(),
+                notes: "".to_string(),
+            },
         }
     }
 
@@ -68,7 +82,7 @@ impl Component for Model {
                 };
                 self.form = "No".to_string();
             }
-            Msg::Request => {
+            Msg::GetRequest => {
                 {
                     // Construct Request
                     let get_request = Request::builder()
@@ -99,12 +113,37 @@ impl Component for Model {
             Msg::FetchResourceComplete(body) => {
                 self.data = body;
             }
-            Msg::Submit => {
-                log::info!("{:#?}", &self.data);
-            }
-            Msg::Form_Input(val) => {
-                self.form_input = val;
+            Msg::PostRequest => {
                 log::info!("{:#?}", self.form_input);
+                
+                // Construct Request
+                let post_request = Request::builder()
+                    .method("POST")
+                    .uri("http://127.0.0.1:3001/recent")
+                    .header("Access-Control-Allow-Origin", "*")
+                    .header("Access-Control-Allow-Headers", "*")
+                    .body(Nothing)
+                    .unwrap();
+
+                // Send Request
+                // TODO: Create a SUCCESS element and message to call if a successful response is
+                // returned from the API
+                log::info!("{:#?}", post_request);
+            }
+            Msg::Submit => {
+                log::info!("{:#?}", &self.form_input);
+            }
+            Msg::TitleUpdate(val) => {
+                self.form_input.title = val;
+                log::info!("{:#?}", self.form_input.title);
+            }
+            Msg::GoalUpdate(val) => {
+                self.form_input.goal = val;
+                log::info!("{:#?}", self.form_input.title);
+            }
+            Msg::NotesUpdate(val) => {
+                self.form_input.notes = val;
+                log::info!("{:#?}", self.form_input.notes);
             }
             _ => {}
         }
@@ -134,7 +173,7 @@ impl Component for Model {
                 <br/>
                 <table class="buttons">
                     <tr>
-                        <td><button onclick=self.link.callback(|_| Msg::Request)>{ "View Recent Entries" }</button></td>
+                        <td><button onclick=self.link.callback(|_| Msg::GetRequest)>{ "View Recent Entries" }</button></td>
                         <td><button onclick=self.link.callback(|_| Msg::Form)>{ "Add New Journal Entry" }</button></td>
                         <td><button onclick=self.link.callback(|_| Msg::Reset)>{ "Clear Journal Entries" }</button></td>
                     </tr>
@@ -156,13 +195,19 @@ fn build_form(ctx: &Model) -> VList {
         html!{
             <>
             <div class="container">
-            <form>
+            <form onsubmit=ctx.link.callback(|_| Msg::PostRequest)>
               <div class="row">
                 <div class="col-25">
                   <label for="fname">{"Title"}</label>
                 </div>
                 <div class="col-75">
-                  <input type="text" id="fname" name="firstname" oninput=ctx.link.callback(|e: InputData| Msg::Form_Input(e.value)) placeholder="Practice Session Title..."/>
+                  <input 
+                    type="text" 
+                    id="fname" 
+                    name="firstname" 
+                    oninput=ctx.link.callback(|e: InputData| Msg::TitleUpdate(e.value)) 
+                    placeholder="Practice Session Title..."
+                  />
                 </div>
               </div>
               <div class="row">
@@ -170,7 +215,13 @@ fn build_form(ctx: &Model) -> VList {
                   <label for="lname">{"Goal"}</label>
                 </div>
                 <div class="col-75">
-                  <input type="text" id="lname" name="lastname" placeholder="Practice Session Goal..."/>
+                  <input 
+                    type="text" 
+                    id="lname" 
+                    name="lastname" 
+                    oninput=ctx.link.callback(|e: InputData| Msg::GoalUpdate(e.value))
+                    placeholder="Practice Session Goal..."
+                  />
                 </div>
               </div>
               <div class="row">
@@ -178,12 +229,18 @@ fn build_form(ctx: &Model) -> VList {
                   <label for="notes">{"Notes"}</label>
                 </div>
                 <div class="col-75">
-                  <textarea id="notes" name="notes" placeholder="Practice Session Notes..." style="height:200px"></textarea>
+                  <textarea 
+                    id="notes" 
+                    name="notes" 
+                    placeholder="Practice Session Notes..." 
+                    oninput=ctx.link.callback(|e: InputData| Msg::NotesUpdate(e.value))
+                    style="height:200px"
+                  />
                 </div>
               </div>
               <br/>
               <div class="row">
-                <button>{"Submit"}</button>
+                <button onclick=ctx.link.callback(|_| Msg::Submit)>{"Submit"}</button>
               </div>
             </form>
           </div>
