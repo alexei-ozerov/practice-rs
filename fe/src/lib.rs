@@ -9,6 +9,7 @@ use yew::format::{Json, Nothing};
 use yew::prelude::*;
 use yew::services::fetch::{FetchService, FetchTask, Request, Response};
 use yew::virtual_dom::*;
+use serde_json::json;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 struct Data {
@@ -29,6 +30,7 @@ struct Model {
     form: String,
     title: String,
     data: Data,
+    post_success: String,
     task: Option<FetchTask>,
     form_input: FormData,
 }
@@ -44,6 +46,8 @@ enum Msg {
     TitleUpdate(String),
     GoalUpdate(String),
     NotesUpdate(String),
+    PostResourceComplete(String),
+    PostResourceFailed,
 }
 
 impl Component for Model {
@@ -61,6 +65,7 @@ impl Component for Model {
                 title: vec!["".to_string()],
                 goal: vec!["".to_string()],
             },
+            post_success: "".to_string(),
             task: None,
             form_input: FormData {
                 title: "".to_string(),
@@ -116,42 +121,59 @@ impl Component for Model {
                 log::info!("{:#?}", self.form_input);
 
                 // Construct Payload & Request
-                let payload: String = r#"{"title": "#.to_string()
-                    + &self.form_input.title
-                    + r#""goal:" "#
-                    + &self.form_input.goal
-                    + r#""notes:" "#
-                    + &self.form_input.notes
-                    + "}";
+                let payload = &json!({
+                    "title": &self.form_input.title,
+                    "goal": &self.form_input.goal,
+                    "notes": &self.form_input.notes,
+                    "pract_date": "2021-03-04",
+                    "pract_time": 120,
+                    "focus_time": 60
+                });
 
                 let post_request = Request::builder()
                     .method("POST")
-                    .uri("http://127.0.0.1:3001/recent")
+                    .uri("http://127.0.0.1:3001/write")
                     .header("Access-Control-Allow-Origin", "*")
                     .header("Access-Control-Allow-Headers", "*")
-                    .body(Nothing)
+                    .body(Json(payload))
                     .unwrap();
 
                 // Send Request
                 // TODO: Create a SUCCESS element and message to call if a successful response is
                 // returned from the API
-                log::info!("{:#?}", payload);
-                log::info!("{:#?}", post_request);
+                log::info!("{:#?}", &post_request);
+                let callback =
+                    self.link
+                        .callback(|response: Response<Json<Result<String, Error>>>| {
+                            if let (meta, Json(Ok(body))) = response.into_parts() {
+                                if meta.status.is_success() {
+                                    return Msg::PostResourceComplete(body);
+                                }
+                            }
+                            Msg::PostResourceFailed
+                        });
+
+                // Execute Task & Store
+                let task = FetchService::fetch(post_request, callback);
+                self.task = Some(task.unwrap());
+            }
+            Msg::PostResourceComplete(body) => {
+                self.post_success = body;
+            }
+            Msg::PostResourceFailed => {
+                log::error!("Post Request Failed!");
             }
             Msg::Submit => {
                 log::info!("{:#?}", &self.form_input);
             }
             Msg::TitleUpdate(val) => {
                 self.form_input.title = val;
-                log::info!("{:#?}", self.form_input.title);
             }
             Msg::GoalUpdate(val) => {
                 self.form_input.goal = val;
-                log::info!("{:#?}", self.form_input.title);
             }
             Msg::NotesUpdate(val) => {
                 self.form_input.notes = val;
-                log::info!("{:#?}", self.form_input.notes);
             }
             _ => {}
         }
