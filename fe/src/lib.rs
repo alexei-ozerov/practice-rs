@@ -56,7 +56,7 @@ impl Component for Model {
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
         Self {
             link,
-            form: "No".to_string(),
+            form: "Yes".to_string(),
             title: "Practice Journal".to_string(),
             // initialize with empty data
             data: Data {
@@ -197,17 +197,26 @@ impl Component for Model {
                 </table>
                 <br/>
                 <div class="side">
-                    <div class="new-form">
-                        {{ new_entry_form }}
-                    </div>
                     <div class="entry-table">
                         <table class="styled-table">
                             {{ data_ui }}
                         </table>
                     </div>
+                    <div class="new-form">
+                        {{ new_entry_form }}
+                    </div>
                 </div>
+                <br/>
+                <hr />
+                <p class="footer">{ "This application was designed entirely 
+                    using Rust Lang. The frontend is rendered with Yew, and 
+                    the backend is implemented using Hyper. For more details, 
+                    please visit "} 
+                    <a href="https://github.com/alexei-ozerov/practice-rs">
+                        { "https://github.com/alexei-ozerov/practice-rs"}
+                    </a>
+                </p>
             </div>
-
         }
     }
 }
@@ -229,6 +238,7 @@ fn build_form(ctx: &Model) -> VList {
                     id="fname"
                     name="firstname"
                     value=ctx.form_input.title
+                    onload=ctx.link.callback(|_| Msg::GetRequest)
                     oninput=ctx.link.callback(|e: InputData| Msg::TitleUpdate(e.value))
                     placeholder="Practice Session Title..."
                   />
