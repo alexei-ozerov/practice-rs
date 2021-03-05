@@ -3,13 +3,13 @@
 use anyhow::Error;
 use log;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use wasm_bindgen::prelude::*;
 use wasm_logger;
 use yew::format::{Json, Nothing};
 use yew::prelude::*;
 use yew::services::fetch::{FetchService, FetchTask, Request, Response};
 use yew::virtual_dom::*;
-use serde_json::json;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 struct Data {
@@ -37,7 +37,6 @@ struct Model {
 
 enum Msg {
     Form,
-    Submit,
     Reset,
     GetRequest,
     PostRequest,
@@ -88,34 +87,12 @@ impl Component for Model {
             }
             Msg::GetRequest => {
                 {
-                    // Construct Request
-                    let get_request = Request::builder()
-                        .method("GET")
-                        .uri("http://127.0.0.1:3001/recent")
-                        .header("Access-Control-Allow-Origin", "*")
-                        .header("Access-Control-Allow-Headers", "*")
-                        .body(Nothing)
-                        .unwrap();
-
-                    // Return Failure or Success via Msg
-                    let callback =
-                        self.link
-                            .callback(|response: Response<Json<Result<Data, Error>>>| {
-                                if let (meta, Json(Ok(body))) = response.into_parts() {
-                                    if meta.status.is_success() {
-                                        return Msg::FetchResourceComplete(body);
-                                    }
-                                }
-                                Msg::FetchResourceFailed
-                            });
-
-                    // Execute Task & Store
-                    let task = FetchService::fetch(get_request, callback);
-                    self.task = Some(task.unwrap());
+                    update_table(self);
                 };
             }
             Msg::FetchResourceComplete(body) => {
                 self.data = body;
+                log::info!("Get Request Success!");
             }
             Msg::PostRequest => {
                 log::info!("{:#?}", self.form_input);
@@ -139,33 +116,42 @@ impl Component for Model {
                     .unwrap();
 
                 // Send Request
-                // TODO: Create a SUCCESS element and message to call if a successful response is
-                // returned from the API
                 log::info!("{:#?}", &post_request);
-                let callback =
-                    self.link
-                        .callback(|response: Response<Json<Result<String, Error>>>| {
-                            log::info!("{:#?}", response);
-                            if let (meta, Json(Ok(body))) = response.into_parts() {
-                                if meta.status.is_success() {
-                                    return Msg::PostResourceComplete(body);
-                                }
+                let callback = self
+                    .link
+                    .callback(|response: Response<Result<String, Error>>| {
+                        log::info!("{:#?}", response);
+                        if let (meta, Ok(body)) = response.into_parts() {
+                            if meta.status.is_success() {
+                                return Msg::PostResourceComplete(body);
                             }
-                            Msg::PostResourceFailed
-                        });
+                        }
+                        Msg::PostResourceFailed
+                    });
 
                 // Execute Task & Store
-                let task = FetchService::fetch(post_request, callback);
-                self.task = Some(task.unwrap());
+                if self.form_input.title != "".to_string() {
+                    let task = FetchService::fetch(post_request, callback);
+                    self.task = Some(task.unwrap());
+                }
             }
             Msg::PostResourceComplete(body) => {
-                self.post_success = body;
+                {
+                    log::info!("Post Request Success!");
+                    self.post_success = body;
+
+                    // Clear Form
+                    self.form_input.title = "".to_string();
+                    self.form_input.goal = "".to_string();
+                    self.form_input.notes = "".to_string();
+
+                    // Get New Request
+                    // TODO: How to trigger GetRequest message
+                    update_table(self);
+                };
             }
             Msg::PostResourceFailed => {
                 log::error!("Post Request Failed!");
-            }
-            Msg::Submit => {
-                log::info!("{:#?}", &self.form_input);
             }
             Msg::TitleUpdate(val) => {
                 self.form_input.title = val;
@@ -198,7 +184,7 @@ impl Component for Model {
 
         // Render Application
         html! {
-            <div>
+            <div class="wrapper">
                 <h1>{ &self.title }</h1>
                 <p class="entry">{ "Welcome. Please choose an option from below to get started. You're doing great." }</p>
                 <br/>
@@ -210,10 +196,16 @@ impl Component for Model {
                     </tr>
                 </table>
                 <br/>
-                {{ new_entry_form }}
-                <table class="styled-table">
-                    {{ data_ui }}
-                </table>
+                <div class="side">
+                    <div class="new-form">
+                        {{ new_entry_form }}
+                    </div>
+                    <div class="entry-table">
+                        <table class="styled-table">
+                            {{ data_ui }}
+                        </table>
+                    </div>
+                </div>
             </div>
 
         }
@@ -236,6 +228,7 @@ fn build_form(ctx: &Model) -> VList {
                     type="text"
                     id="fname"
                     name="firstname"
+                    value=ctx.form_input.title
                     oninput=ctx.link.callback(|e: InputData| Msg::TitleUpdate(e.value))
                     placeholder="Practice Session Title..."
                   />
@@ -250,6 +243,7 @@ fn build_form(ctx: &Model) -> VList {
                     type="text"
                     id="lname"
                     name="lastname"
+                    value=ctx.form_input.goal
                     oninput=ctx.link.callback(|e: InputData| Msg::GoalUpdate(e.value))
                     placeholder="Practice Session Goal..."
                   />
@@ -264,6 +258,7 @@ fn build_form(ctx: &Model) -> VList {
                     id="notes"
                     name="notes"
                     placeholder="Practice Session Notes..."
+                    value=ctx.form_input.notes
                     oninput=ctx.link.callback(|e: InputData| Msg::NotesUpdate(e.value))
                     style="height:200px"
                   />
@@ -322,6 +317,34 @@ fn build_table(data: &Data) -> VList {
     }
 
     data_ui
+}
+
+// Send Request To Update Table
+fn update_table(ctx: &mut Model) {
+    // Construct Request
+    let get_request = Request::builder()
+        .method("GET")
+        .uri("http://127.0.0.1:3001/recent")
+        .header("Access-Control-Allow-Origin", "*")
+        .header("Access-Control-Allow-Headers", "*")
+        .body(Nothing)
+        .unwrap();
+
+    // Return Failure or Success via Msg
+    let callback = ctx
+        .link
+        .callback(|response: Response<Json<Result<Data, Error>>>| {
+            if let (meta, Json(Ok(body))) = response.into_parts() {
+                if meta.status.is_success() {
+                    return Msg::FetchResourceComplete(body);
+                }
+            }
+            Msg::FetchResourceFailed
+        });
+
+    // Execute Task & Store
+    let task = FetchService::fetch(get_request, callback);
+    ctx.task = Some(task.unwrap());
 }
 
 // Mount Application To Body of index.html
