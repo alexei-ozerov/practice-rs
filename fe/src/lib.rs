@@ -215,6 +215,11 @@ impl Component for Model {
                     <a href="https://github.com/alexei-ozerov/practice-rs">
                         { "https://github.com/alexei-ozerov/practice-rs"}
                     </a>
+                    <br/>
+                    <br/>
+                    {
+                        "Contributors include: Matt Sellick"
+                    }
                 </p>
             </div>
         }
