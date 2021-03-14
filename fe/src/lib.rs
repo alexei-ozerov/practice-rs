@@ -2,6 +2,7 @@
 
 use anyhow::Error;
 use log;
+use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use wasm_bindgen::prelude::*;
@@ -97,19 +98,29 @@ impl Component for Model {
             Msg::PostRequest => {
                 log::info!("{:#?}", self.form_input);
 
+                // Get Local Date
+                // Split String as Local::now() returns a YYYY-MM-DDTHH:MM:SS
+                // TODO: Fix whatever is throwing an exception here ... it's that first local_time
+                // statement I'm betting ...
+                let local_time = Local::now().to_string();
+                log::info!("{:#?}", &local_time);
+
+                let split = local_time.split("T");
+                let date: Vec<&str> = split.collect();
+
                 // Construct Payload & Request
                 let payload = &json!({
                     "title": &self.form_input.title,
                     "goal": &self.form_input.goal,
                     "notes": &self.form_input.notes,
-                    "pract_date": "2021-03-04",
+                    "pract_date": date[0],
                     "pract_time": 120,
                     "focus_time": 60
                 });
 
                 let post_request = Request::builder()
                     .method("POST")
-                    .uri("http://127.0.0.1:3001/write")
+                    .uri("http://127.0.0.1:3000/write")
                     .header("Access-Control-Allow-Origin", "*")
                     .header("Access-Control-Allow-Headers", "*")
                     .body(Json(payload))
@@ -188,22 +199,25 @@ impl Component for Model {
                 <h1>{ &self.title }</h1>
                 <p class="entry">{ "Welcome. Please choose an option from below to get started. You're doing great." }</p>
                 <br/>
-                <table class="buttons">
-                    <tr>
-                        <td><button onclick=self.link.callback(|_| Msg::GetRequest)>{ "View Recent Entries" }</button></td>
-                        <td><button onclick=self.link.callback(|_| Msg::Form)>{ "Add New Journal Entry" }</button></td>
-                        <td><button onclick=self.link.callback(|_| Msg::Reset)>{ "Clear Journal Entries" }</button></td>
-                    </tr>
-                </table>
+                //<table class="buttons">
+                    //<tr>
+                        //<td><button onclick=self.link.callback(|_| Msg::GetRequest)>{ "View Recent Entries" }</button></td>
+                        //<td><button onclick=self.link.callback(|_| Msg::Form)>{ "Add New Journal Entry" }</button></td>
+                        //<td><button onclick=self.link.callback(|_| Msg::Reset)>{ "Clear Journal Entries" }</button></td>
+                    //</tr>
+                //</table>
                 <br/>
                 <div class="side">
+                    <div class="new-form">
+                        {{ new_entry_form }}
+                    </div>
+                   
+                    <br />
+
                     <div class="entry-table">
                         <table class="styled-table">
                             {{ data_ui }}
                         </table>
-                    </div>
-                    <div class="new-form">
-                        {{ new_entry_form }}
                     </div>
                 </div>
                 <br/>
@@ -217,9 +231,10 @@ impl Component for Model {
                     </a>
                     <br/>
                     <br/>
-                    {
-                        "Contributors include: Matt Sellick"
-                    }
+                    { "Additional Code Contributions: "}
+                    <a href="https://github.com/matt-sellick">
+                        { "Matt Sellick" }
+                    </a>
                 </p>
             </div>
         }
@@ -299,8 +314,8 @@ fn build_table(data: &Data) -> VList {
             <>
             <thead>
             <tr>
-                <th>{"Title"}</th>
                 <th>{"Date"}</th>
+                <th>{"Title"}</th>
                 <th>{"Goal"}</th>
             </tr>
             </thead>
@@ -339,7 +354,7 @@ fn update_table(ctx: &mut Model) {
     // Construct Request
     let get_request = Request::builder()
         .method("GET")
-        .uri("http://127.0.0.1:3001/recent")
+        .uri("http://127.0.0.1:3000/recent")
         .header("Access-Control-Allow-Origin", "*")
         .header("Access-Control-Allow-Headers", "*")
         .body(Nothing)
